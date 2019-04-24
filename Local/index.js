@@ -16,10 +16,10 @@ const db = new Sequelize('login_db', 'postgres', '1234', {
   dialect: 'postgres',
   host: "localhost",
   port: 5432,
-  define: {
-        timestamps: false
-    }
-});
+  define:{
+    timestamps:false
+  }
+  });
 
 db
   .authenticate()
@@ -30,18 +30,10 @@ db
     console.error('Unable to connect to the database:', err);
   });
 
+module.exports = db;
 
 // Define what a user looks like in the user table (schema)
-
-const User = db.define('user', {
-  username: {
-    type: Sequelize.STRING
-  },
-  password: {
-    type: Sequelize.STRING
-  }
-});
-
+const User = require('./models/user');
 // Sync up User table that we just created with the database
 User.sync()
   .then(() => {
@@ -84,14 +76,16 @@ app.post('/login', (request, response) => {
   console.log('What is my request body (the information my user is sending in: ', request.body);
   User.findOne({
     where: {
-      username: request.body.username,
-      password: request.body.password
+      username: request.body.username
     }
   })
     .then((user) => {
       if (!user) {
         response.json('Wrong username or password');
+      } else if (!user.correctPassword(request.body.password)){
+        response.json('Wrong username or password');
       } else {
+        console.log("user being returned", user);
         response.json(user);
       }
     });
@@ -111,3 +105,4 @@ app.post('/new', (request, response) => {
 app.listen(process.env.PORT || 3000, () => {
   console.log('Succesfully listening on port 3000');
 });
+
